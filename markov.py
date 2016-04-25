@@ -23,27 +23,50 @@ class Markov:
             tokens = re.finditer(token_re, para)
             self._parse(tokens)
 
-    def generate(self, size):
-        """Takes a max size and generates text based on a Markov chain"""
+    def generate(self, size=None):
+        """Takes a max size and generates text based on a Markov chain.
+        If size is not given then a text is generated until termination."""
         # We can't give an input < 2
         first, second, token = random.choice(self.starts)
         tokens = [first, second, token]
         first = second
         second = token
-        for i in range(size-3):
-            choices = self.cache.get((first, second))
-            if choices == None:
-                break
-            token = random.choice(choices)
-            tokens.append(token)
-            first = second
-            second = token
+
+        if size == None:
+            while True:
+                choices = self.cache.get((first, second))
+                if choices == None: # We no longer find valid tokens
+                    break
+                token = random.choice(choices)
+                tokens.append(token)
+                first = second
+                second = token
+        else:
+            count = 3
+            while count < size:
+                choices = self.cache.get((first, second))
+                if choices == None: # We no longer find valid tokens
+                    # Starts new token
+                    tokens.append("\n\n")
+                    new_seed = random.choice(self.starts)
+                    tokens.extend(new_seed)
+                    first, second, token = new_seed
+                    count += 3
+                    continue
+                token = random.choice(choices)
+                tokens.append(token)
+                first = second
+                second = token
+                count += 1
+
         output = ""
         for token in tokens:
             if re.match(r"'", token):
                 output = output[:-1] + token
             elif re.match(r"[^\w\s]+", token):
                 output = output[:-1] + token + " "
+            elif re.match(r"\s+", token):
+                output = output[:-1] + token
             else:
                 output += token + " "
         return output
@@ -84,6 +107,6 @@ if __name__ == '__main__':
     import sys
     if len(sys.argv) == 2:
         m = Markov(sys.argv[1])
-        print(m.generate(100))
+        print(m.generate())
     else:
         print("Usage: markov.py <filename>")
