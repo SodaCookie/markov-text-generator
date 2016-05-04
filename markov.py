@@ -105,8 +105,9 @@ class Markov:
 
 if __name__ == '__main__':
     import sys
+    import textwrap
     if len(sys.argv) == 2:
         m = Markov(sys.argv[1])
-        print(m.generate())
+        print(textwrap.fill(m.generate(), 76))
     else:
         print("Usage: markov.py <filename>")
